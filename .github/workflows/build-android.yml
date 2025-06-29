@@ -15,7 +15,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -33,15 +32,19 @@ jobs:
       run: yes | sdkmanager --licenses
     
     - name: Install dependencies
-      run: npm ci --legacy-peer-deps
+      run: npm install --legacy-peer-deps
     
     - name: Build web assets
-      run: npx vite build --outDir client/dist
+      run: npm run build
+    
+    - name: Install Capacitor CLI
+      run: npm install -g @capacitor/cli
+    
+    - name: Add Android platform
+      run: npx cap add android
     
     - name: Sync Capacitor
-      run: |
-        npx cap add android --confirm || true
-        npx cap sync android
+      run: npx cap sync android
     
     - name: Grant execute permission for gradlew
       run: chmod +x android/gradlew
