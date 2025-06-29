@@ -11,6 +11,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Debug - Show project structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Files in root:"
+        ls -la
+        echo "package.json exists?"
+        test -f package.json && echo "YES" || echo "NO"
+        echo "Android folder exists?"
+        test -d android && echo "YES" || echo "NO"
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -22,6 +33,17 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
+    - name: Install dependencies
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci --legacy-peer-deps
+        elif [ -f package.json ]; then
+          npm install --legacy-peer-deps
+        else
+          echo "No package.json found!"
+          exit 1
+        fi
+    
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
@@ -31,31 +53,35 @@ jobs:
     - name: Accept Android SDK licenses
       run: yes | sdkmanager --licenses
     
-    - name: Install dependencies
-      run: npm install --legacy-peer-deps
-    
-    - name: Build web assets
-      run: npm run build
-    
-    - name: Install Capacitor CLI
+    - name: Install Capacitor CLI globally
       run: npm install -g @capacitor/cli
     
-    - name: Add Android platform
-      run: npx cap add android
+    - name: Build web app
+      run: |
+        if npm run build; then
+          echo "Build successful"
+        else
+          echo "Build failed, trying alternative"
+          npx vite build
+        fi
     
-    - name: Sync Capacitor
-      run: npx cap sync android
+    - name: Initialize Capacitor Android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
+        npx cap sync android
     
-    - name: Grant execute permission for gradlew
+    - name: Make gradlew executable
       run: chmod +x android/gradlew
     
-    - name: Build debug APK
+    - name: Build APK
       working-directory: android
-      run: ./gradlew assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace --no-daemon
     
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: besmi-android-debug
+        name: besmi-android-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
+        retention-days: 7
