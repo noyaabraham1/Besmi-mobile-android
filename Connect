@@ -2,5 +2,5 @@ git init
 git add .
 git commit -m "Initial mobile app setup"
 git branch -M main
-git remote add origin https://github.com/noyaabraham1/besmi-mobile-app.git
+git remote add origin https://github.com/YOURUSERNAME/besmi-mobile-app.git
 git push -u origin main
